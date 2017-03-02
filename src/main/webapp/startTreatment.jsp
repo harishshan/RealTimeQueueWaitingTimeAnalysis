@@ -3,7 +3,7 @@
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-		<title>Home | Real Time Queue Waiting Time Analysis</title>
+		<title>Start Treatment | Real Time Queue Waiting Time Analysis</title>
 		<link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
@@ -45,12 +45,12 @@
 			</div>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-                    <h3 class="panel-title">Patient Admission</h3>
+                    <h3 class="panel-title">Start Treatment</h3>
                 </div>			
 				<div class="panel-body">
 					<div ng-app="mainApp" ng-controller="ViewDataDictionary" class="modal-body">
 						<div class="form-group">
-							<label>Patient Name</label>
+							<label>Patient Name :</label>
 							<input type="text" name="patientName" id="patientName" align="right" ng-model="patientName" placeholder="Enter Patient Name" class="form-control">
 						</div>
 						<div class="form-group">
@@ -77,6 +77,14 @@
 						<div class="form-group">
 							<label>Token Number</label>
 							<input type="text" name="tokenNumber" id="tokenNumber" align="right" ng-model="tokenNumber" placeholder="Enter Token Number" class="form-control">
+						</div>
+						<div class="form-group">
+							<label>Doctor Name</label>
+							<input type="text" name="doctorName" id="doctorName" align="right" ng-model="doctorName" placeholder="Enter Doctor Name" class="form-control">
+						</div>
+						<div class="form-group">
+							<label>Treatment Start Time</label>
+							<input type="text" name="treatmentStartTime" id="treatmentStartTime" align="right" ng-model="treatmentStartTime" placeholder="Enter Treatment Start Time" class="form-control">
 						</div>
 						<div class="form-group" align="right">
 							<button type="submit" class="btn btn-success">Submit</button>
