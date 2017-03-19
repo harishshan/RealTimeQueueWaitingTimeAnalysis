@@ -3,9 +3,6 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
-	<bean id="loginDAO" class="com.harish.rtqwta.dao.LoginDAO">
-		<property name="sessionFactory" ref="sessionFactory"></property>
-	</bean>
 	<bean id="gson" class="com.google.gson.Gson">
 	</bean>
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">

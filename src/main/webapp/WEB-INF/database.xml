@@ -2,33 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
-
-	<bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close">
-        <property name="driverClass" value="${hibernate.connection.driver_class}" />
-        <property name="jdbcUrl" value="${hibernate.connection.url}" />
-        <property name="username" value="${hibernate.connection.username}" />
-        <property name="password" value="${hibernate.connection.password}" />
-		<property name="idleMaxAgeInSeconds" value="${bonecp.idleMaxAgeInSeconds}" />
-		<property name="partitionCount" value="${bonecp.partitionCount}" />
-		<property name="minConnectionsPerPartition" value="${bonecp.minConnectionsPerPartition}" />	
-		<property name="maxConnectionsPerPartition"	value="${bonecp.maxConnectionsPerPartition}" />		
-		<property name="acquireIncrement" value="${bonecp.acquireIncrement}" />
-    </bean>
 	
-	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
-		<property name="dataSource" ref="dataSource" />
-		<property name="hibernateProperties">
-			<props>
-				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
-				<prop key="hibernate.show_sql">${show_sql}</prop>
-				<prop key="hibernate.current_session_context_class">${hibernate.current_session_context_class}</prop>
-				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
-			</props>
-		</property>
-		<property name="annotatedClasses">
-			<list>
-				<value>com.harish.rtqwta.entity.Login</value>		
-			</list>
-		</property>
+	<bean id="cassandraConnection" class="com.harish.rtqwta.util.CassandraConnection" init-method="initMethod" destroy-method="">
+		<property name="hostname" value="${cassandra.hostname}"></property>
+		<property name="port" value="${cassandra.port}"></property>
+		<property name="database" value="${cassandra.database}"></property>
+	</bean>
+	<bean id="treatmentTypeDAO" class="com.harish.rtqwta.dao.TreatmentTypeDAO">
+		<property name="cassandraConnection" ref="cassandraConnection"></property>
 	</bean>
 </beans>
