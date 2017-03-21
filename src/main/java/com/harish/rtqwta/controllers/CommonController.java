@@ -36,6 +36,9 @@ public class CommonController {
 	private TreatmentTypeDAO treatmentTypeDAO;
 	
     private final Logger logger = LoggerFactory.getLogger(CommonController.class);
+    
+    @Autowired
+    private Gson gson;
 
     @RequestMapping(value = "/getTreatmentType", method = RequestMethod.GET)
     public @ResponseBody JsonArray getTreatmentType(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
@@ -91,7 +94,6 @@ public class CommonController {
     public @ResponseBody JsonObject admitPatient(HttpServletRequest request, HttpServletResponse response, HttpSession session, @RequestBody String patientDetailsJson) {
     	JsonObject jsonObject =new JsonObject();
         try {
-        	Gson gson = new Gson();
         	PatientDetails patientDetails = gson.fromJson(patientDetailsJson, PatientDetails.class);
         	patientDetails.setAdmission_TS(new Date());
         	treatmentTypeDAO.admitPatient(patientDetails);
@@ -121,12 +123,83 @@ public class CommonController {
         		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
         		patientList.add(jsonObject);
         	}
         } catch (Exception ex) {
         	logger.error("Exception:", ex);
         } finally{
         	return patientList;
+        }
+    }
+    @RequestMapping(value = "/getTreatmentCompletedPatientList", method = RequestMethod.GET)
+    public @ResponseBody JsonArray getTreatmentCompletedPatientList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+    	JsonArray patientList = new JsonArray();
+        try {
+        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getTreatmentCompletedPatientList();
+        	Collections.sort(patientDetailsList, new PatientDetailsComparator());
+        	for(PatientDetails patientDetails: patientDetailsList){
+        		JsonObject jsonObject= new JsonObject();
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
+        		patientList.add(jsonObject);
+        	}
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        } finally{
+        	return patientList;
+        }
+    }
+    
+    @RequestMapping(value = "/startTreatmentForPatientId/{patientId}", method = RequestMethod.GET)
+    public @ResponseBody JsonObject startTreatmentForPatientId(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable int patientId) {
+    	JsonObject jsonObject =new JsonObject();
+        try {
+        	treatmentTypeDAO.startTreatmentForPatientId(patientId);
+        	jsonObject.addProperty("message", "Treatment started successfully");
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        	jsonObject.addProperty("error", ex.getMessage());
+        } finally{
+        	return jsonObject;
+        }
+    }
+    
+    @RequestMapping(value = "/completeTreatmentForPatientId/{patientId}", method = RequestMethod.GET)
+    public @ResponseBody JsonObject completeTreatmentForPatientId(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable int patientId) {
+    	JsonObject jsonObject =new JsonObject();
+        try {
+        	treatmentTypeDAO.completeTreatmentForPatientId(patientId);
+        	jsonObject.addProperty("message", "Treatment completed successfully");
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        	jsonObject.addProperty("error", ex.getMessage());
+        } finally{
+        	return jsonObject;
+        }
+    }
+    
+    @RequestMapping(value = "/historicalDataCookUp/{count}", method = RequestMethod.GET)
+    public @ResponseBody JsonObject historicalDataCookUp(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable long count) {
+    	JsonObject jsonObject =new JsonObject();
+        try {
+        	treatmentTypeDAO.historicalDataCookUp(count);
+        	jsonObject.addProperty("message", "History Data Cookup completed successfully");
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        	jsonObject.addProperty("error", ex.getMessage());
+        } finally{
+        	return jsonObject;
         }
     }
 

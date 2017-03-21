@@ -12,6 +12,10 @@ public class PatientDetails {
 	private Date  admission_TS;
 	private Date treatment_start_TS;
 	private Date treatment_complete_TS;
+	private String doctor;
+	private String status;
+	private long waitingTime;
+	private long treatmentTime;
 	public int getPatient_id() {
 		return patient_id;
 	}
@@ -65,6 +69,30 @@ public class PatientDetails {
 	}
 	public void setTreatment_complete_TS(Date treatment_complete_TS) {
 		this.treatment_complete_TS = treatment_complete_TS;
+	}
+	public String getDoctor() {
+		return doctor;
+	}
+	public void setDoctor(String doctor) {
+		this.doctor = doctor;
+	}
+	public String getStatus() {
+		return status;
+	}
+	public void setStatus(String status) {
+		this.status = status;
+	}
+	public long getWaitingTime() {
+		return waitingTime;
+	}
+	public void setWaitingTime(long waitingTime) {
+		this.waitingTime = waitingTime;
+	}
+	public long getTreatmentTime() {
+		return treatmentTime;
+	}
+	public void setTreatmentTime(long treatmentTime) {
+		this.treatmentTime = treatmentTime;
 	}
 	
 

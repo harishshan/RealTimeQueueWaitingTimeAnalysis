@@ -22,5 +22,32 @@ public class CommonConstants {
 		public static final String ADMISSION_TS = "admission_ts";
 		public static final String TREATMENT_START_TS = "treatment_start_ts";
 		public static final String TREATMENT_COMPLETE_TS = "treatment_complete_ts";
+		public static final String DOCTOR = "doctor";
+		public static final String STATUS = "status";
+		public static class Status{
+			public static final String COMPLETED ="C";
+			public static final String WAITING ="W";
+			public static final String STARTED="S";
+		}
+	}
+
+	public static class Analysis{
+		public static final String CATEGORY = "category";
+		public static final String SUB_CATEGORY = "sub_category";
+		public static final String PATIENTS_COUNT = "patients_count";
+		public static final String TOTAL_WAITING_TIME = "total_waiting_time";
+		public static final String AVG_WAITING_TIME = "avg_waiting_time";
+		public static final String TOTAL_TREATMENT_TIME = "total_treatment_time";
+		public static final String AVG_TREATMENT_TIME = "avg_treatment_time";
+		public static class Category{
+			public static final String AGE = "AGE";
+		}
+		public static class SubCategory{
+			public static final String BELOW_TWENTY = "20";
+			public static final String TWENTY_TO_FOURTY = "20-40";
+			public static final String FOURTY_TO_SIXTY = "40-60";
+			public static final String SIXTY_TO_EIGHTY = "60-80";
+			public static final String ABOVE_EIGHTY = "80";
+		}
 	}
 }

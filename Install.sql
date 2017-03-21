@@ -13,4 +13,8 @@ CREATE TABLE rtqwta.common_counter(counter_value counter,table_name  text, PRIMA
 UPDATE rtqwta.common_counter SET counter_value = counter_value + 1 WHERE table_name='Patient';
 
 CREATE TABLE rtqwta.patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, location text, treatment_type text, 
-	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp);
+	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text);
+	
+CREATE TABLE rtqwta.analysis(category text, sub_category text, patients_count bigint, total_waiting_time bigint, avg_waiting_time bigint, total_treatment_time bigint, avg_treatment_time bigint, 
+	PRIMARY KEY(category, sub_category));
+

@@ -21,6 +21,34 @@
         		$http.get(url).success( function(response) {
         			$scope.patientDetailsList = response; 
         		});
+        		$scope.startTreatment = function(patientId){
+        			var url = "startTreatmentForPatientId/"+patientId;
+        			$http.get(url).success( function(response) {
+        				if(response.message!=undefined){
+        					alertify.alert('Info', response.message);
+        					var url = "getPatientListForTreatment";
+        					$http.get(url).success( function(response) {
+        	        			$scope.patientDetailsList = response; 
+        	        		});
+        				}else if(response.error!=undefined){
+        					alertify.alert('Warn', response.error);
+        				}
+            		});        			
+        		}
+        		$scope.completeTreatment = function(patientId){
+        			var url = "completeTreatmentForPatientId/"+patientId;
+        			$http.get(url).success( function(response) {
+        				if(response.message!=undefined){
+        					alertify.alert('Info', response.message);
+        					var url = "getPatientListForTreatment";
+        					$http.get(url).success( function(response) {
+        	        			$scope.patientDetailsList = response; 
+        	        		});
+        				}else if(response.error!=undefined){
+        					alertify.alert('Warn', response.error);
+        				}
+            		});        			
+        		}
 	        });
       	</script>
 	</head>
@@ -72,9 +100,11 @@
 										<td>Location</td>
 										<td>Treatment Type</td>
 										<td>Token Number</td>
-										<td>Doctor Name</td>
+										<td>Doctor</td>
 										<td>Admission Timestamp</td>
-										<td>Treatment Status / Action</td>
+										<td>Start Time</td>
+										<td>Complete Time</td>
+										<td>Action</td>
 									</tr>
 								</thead>
 								<tbody>
@@ -85,18 +115,17 @@
 										<td>{{patientDetails.location}}</td>
 										<td>{{patientDetails.treatment_type}}</td>
 										<td>{{patientDetails.token_number}}</td>
-										<td>{{patientDetails.doctorName}}</td>
+										<td>{{patientDetails.doctor}}</td>
 										<td>{{patientDetails.admission_ts}}</td>
+										<td>{{patientDetails.treatment_start_ts}}</td>
+										<td>{{patientDetails.treatment_complete_ts}}</td>
 										<td>
 											<div ng-if="patientDetails.treatment_start_ts == undefine">
-												<button type="submit" class="btn btn-success" ng-click="startTreatment()">Not Started / Start Treatment</button>
+												<button type="submit" class="btn btn-success" ng-click="startTreatment(patientDetails.patient_id)">Start Treatment</button>
 											</div>
 											<div ng-if="patientDetails.treatment_start_ts != undefine">
 												<div ng-if="patientDetails.treatment_complete_ts == undefine">
-													<button type="submit" class="btn btn-danger" ng-click="startTreatment()">Progress / Complete Treatment</button>
-												</div>
-												<div ng-if="patientDetails.treatment_complete_ts != undefine">
-													<label>Completed</label>
+													<button type="submit" class="btn btn-danger" ng-click="completeTreatment(patientDetails.patient_id)">Complete Treatment</button>
 												</div>
 											</div>
 										</td>

@@ -11,21 +11,34 @@
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/alertifyjs/1.9.0/css/themes/bootstrap.min.css"/>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.2/angular.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/alertifyjs/1.9.0/alertify.min.js"></script>
-		
+		<script src="https://cdn.jsdelivr.net/alertifyjs/1.9.0/alertify.min.js"></script>		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha/css/bootstrap.min.css">
 		<!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha/js/bootstrap.min.js"></script> -->
 		<script>
 	        var mainApp = angular.module("mainApp", []);
-	        mainApp.controller('ViewDataDictionary', function($scope, $http) {
-	        	$scope.treatmentTypeList=[
-	        		{Name:"Surgery"},{Name:"Scan"},{Name:"OP"},{Name:"Pharmacy"}
-	        	] 
+	        mainApp.controller('treatmentCompletedView', function($scope, $http) {
+	        	var url = "getTreatmentCompletedPatientList";
+        		$http.get(url).success( function(response) {
+        			$scope.patientDetailsList = response; 
+        		});
 	        });
       	</script>
 	</head>
 	<body>
 		<div class="container">
+		<nav class="navbar navbar-inverse">
+			<div class="container-fluid">
+				<ul class="nav navbar-nav">
+					<li><a href="/rtqwta/">Patient Admission</a></li>
+					<li><a href="treatment.jsp">Treatment</a></li>					
+					<li class="active"><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+					<li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+				</ul>
+			</div>
+		</nav>
 			<div class="page-header" align="center" style="border: none;">
 				<table>
 					<tr>
@@ -48,51 +61,38 @@
                     <h3 class="panel-title">Treatment Completed</h3>
                 </div>			
 				<div class="panel-body">
-					<div ng-app="mainApp" ng-controller="ViewDataDictionary" class="modal-body">
-						<div class="form-group">
-							<label>Patient Name</label>
-							<input type="text" name="patientName" id="patientName" align="right" ng-model="patientName" placeholder="Enter Patient Name" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Patient Id</label>
-							<input type="text" name="patientId" id="patientId" align="right" ng-model="patientId" placeholder="Enter Patient Id" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Patient Age</label><input type="text" name="patientAge" id="patientAge" align="right" ng-model="patientAge" placeholder="Enter Patient Age" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Treatment Type</label>
-							<select name="treatmentTypeSelect" id="treatmentTypeSelect" ng-model="treatmentTypeSelect" ng-change="treatmentTypeSelectChange()" class="form-control" >
-									<option ng-repeat="treatmentType in treatmentTypeList" value="{{treatmentType.Name}}">{{treatmentType.Name}}</option>
-							</select>							
-						</div>
-						<div class="form-group">
-							<label>Location</label>
-							<input type="text" name="location" id="location" align="right" ng-model="location" placeholder="Enter Location" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>In Time</label>
-							<input type="text" name="inTime" id="inTime" align="right" ng-model="inTime" placeholder="Enter In Time" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Token Number</label>
-							<input type="text" name="tokenNumber" id="tokenNumber" align="right" ng-model="tokenNumber" placeholder="Enter Token Number" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Doctor Name</label>
-							<input type="text" name="doctorName" id="doctorName" align="right" ng-model="doctorName" placeholder="Enter Doctor Name" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Treatment Start Time</label>
-							<input type="text" name="treatmentStartTime" id="treatmentStartTime" align="right" ng-model="treatmentStartTime" placeholder="Enter Treatment Start Time" class="form-control">
-						</div>
-						<div class="form-group">
-							<label>Treatment Completed Time</label>
-							<input type="text" name="treatmentCompletedTime" id="treatmentCompletedTime" align="right" ng-model="treatmentCompletedTime" placeholder="Enter Treatment Completed Time" class="form-control">
-						</div>
-						<div class="form-group" align="right">
-							<button type="submit" class="btn btn-success">Submit</button>
-							<button type="button" class="btn btn-danger">Clear</button>
+					<div ng-app="mainApp" ng-controller="treatmentCompletedView" class="modal-body">
+						<div class="table-responsive">
+							<table  align="center"  class="table table-hover table-bordered">
+								<thead class="thead-inverse">									
+									<tr>
+										<td>Patient ID</td>										
+										<td>Patient Name</td>
+										<td>Patient Age</td>
+										<td>Location</td>
+										<td>Treatment Type</td>
+										<td>Token Number</td>
+										<td>Doctor</td>
+										<td>Admission Timestamp</td>
+										<td>Start Time</td>
+										<td>Complete Time</td>
+									</tr>
+								</thead>
+								<tbody>
+									<tr ng-repeat="patientDetails in patientDetailsList">
+										<th scope="row">{{patientDetails.patient_id}}</th>
+										<td>{{patientDetails.patient_name}}</td>
+										<td>{{patientDetails.patient_age}}</td>
+										<td>{{patientDetails.location}}</td>
+										<td>{{patientDetails.treatment_type}}</td>
+										<td>{{patientDetails.token_number}}</td>
+										<td>{{patientDetails.doctor}}</td>
+										<td>{{patientDetails.admission_ts}}</td>
+										<td>{{patientDetails.treatment_start_ts}}</td>
+										<td>{{patientDetails.treatment_complete_ts}}</td>
+									</tr>
+								<tbody>
+							</table>
 						</div>
 					</div>	
 				</div>

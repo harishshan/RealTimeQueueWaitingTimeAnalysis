@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<bean id="gson" class="com.google.gson.Gson">
 	</bean>
@@ -19,5 +23,15 @@
 	</bean>
 	<bean id="mailUtil" class="com.harish.rtqwta.util.MailUtil">
 		<property name="mailSender" ref="mailSender" />
+	</bean>
+	<bean id="eventProcessUtil" class="com.harish.rtqwta.util.EventProcessUtil">
+		<property name="gson" ref="gson"/>
+	</bean>
+	<bean id="kafkaUtil" class="com.harish.rtqwta.util.KafkaUtil" init-method="createEventTopic">
+		<property name="zookeeperHosts" value="${zookeeper.host}"/>
+		<property name="kafkaHosts" value="${kafka.host}"/>
+		<property name="topicName" value="${kafka.topic}"/>
+		<property name="noOfPartitions" value="${kakfa.noOfPartitions}"/>
+		<property name="noOfReplication" value="${kafka.noOfReplication}"/>
 	</bean>
 </beans>

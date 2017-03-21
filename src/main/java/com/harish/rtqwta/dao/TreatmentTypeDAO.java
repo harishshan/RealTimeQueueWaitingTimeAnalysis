@@ -1,7 +1,11 @@
 package com.harish.rtqwta.dao;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +14,19 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.harish.rtqwta.constants.CommonConstants;
 import com.harish.rtqwta.controllers.CommonController;
+import com.harish.rtqwta.entity.Analysis;
 import com.harish.rtqwta.entity.PatientDetails;
 import com.harish.rtqwta.entity.TreatmentType;
 import com.harish.rtqwta.util.CassandraConnection;
+import com.harish.rtqwta.util.EventProcessUtil;
+import com.harish.rtqwta.util.KafkaUtil;
+import com.harish.rtqwta.util.RandomUtil;
 
 public class TreatmentTypeDAO {
 	private CassandraConnection cassandraConnection;
 	private final Logger logger = LoggerFactory.getLogger(CommonController.class);
+	private KafkaUtil kafkaUtil;
+	private EventProcessUtil eventProcessUtil;
 	
 	public List<TreatmentType> getTreatmentTypeList(){
 		List<TreatmentType> treatmentTypeList = new ArrayList<TreatmentType>();
@@ -53,7 +63,7 @@ public class TreatmentTypeDAO {
 		}
 	}
 	
-	public synchronized long getNewTokenNumber(String treatmentType){
+	public synchronized Long getNewTokenNumber(String treatmentType){
 		long newTokenNumber=0;
 		try{
 			StringBuilder insertQueryBuilder=new StringBuilder("UPDATE common_counter SET counter_value = counter_value + 1 WHERE table_name=?");
@@ -68,15 +78,96 @@ public class TreatmentTypeDAO {
 			return newTokenNumber;
 		}
 	}
+	public synchronized void updateAnalysis(Analysis analysis){
+		try{
+			StringBuilder queryBuilder=new StringBuilder("SELECT category, sub_category, patients_count, total_waiting_time, avg_waiting_time, total_treatment_time, avg_treatment_time FROM analysis WHERE category=? AND sub_category=?");
+			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),analysis.getCategory(), analysis.getSub_category());
+			Row row=resultSet.one();
+			if(row!=null){
+				analysis.setPatients_count(analysis.getPatients_count() +row.getLong(CommonConstants.Analysis.PATIENTS_COUNT));
+				analysis.setTotal_waiting_time(analysis.getWaiting_time() + row.getLong(CommonConstants.Analysis.TOTAL_WAITING_TIME));
+				analysis.setAvg_waiting_time(analysis.getTotal_waiting_time() / analysis.getPatients_count());
+				analysis.setTotal_treatment_time(analysis.getTreatment_time() + row.getLong(CommonConstants.Analysis.TOTAL_TREATMENT_TIME));
+				analysis.setAvg_treatment_time(analysis.getTotal_treatment_time() / analysis.getPatients_count());
+			} 
+			StringBuilder updateQueryBuilder=new StringBuilder("UPDATE analysis SET patients_count = ?, total_waiting_time = ?, avg_waiting_time =?, total_treatment_time = ?, avg_treatment_time = ? ")
+				.append("WHERE category=? and sub_category=?");
+			cassandraConnection.getSession().execute(updateQueryBuilder.toString(), analysis.getPatients_count(), analysis.getTotal_waiting_time(), analysis.getAvg_treatment_time(),
+					analysis.getTotal_treatment_time(), analysis.getAvg_treatment_time(), analysis.getCategory(), analysis.getSub_category());
+		}catch (Exception ex) {
+			logger.error("Exception:", ex);
+		}finally{
+		}
+	}
 	
 	public void admitPatient(PatientDetails p){
 		try{
 			StringBuilder insertQueryBuilder=new StringBuilder("INSERT INTO patient_details(patient_id, patient_name, patient_age, location, treatment_type, ")
-					.append("token_number, admission_ts, treatment_start_ts, treatment_complete_ts) VALUES(?,?,?,?,?,?,?,?,?)");
+					.append("token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
 			cassandraConnection.getSession().execute(insertQueryBuilder.toString(),p.getPatient_id(),p.getPatient_name(),p.getPatient_age(),p.getLocation(),
-					p.getTreatment_type(),p.getToken_number(),p.getAdmission_TS(),p.getTreatment_start_TS(),p.getTreatment_complete_TS());
+					p.getTreatment_type(),p.getToken_number(),p.getAdmission_TS(),p.getTreatment_start_TS(),p.getTreatment_complete_TS(),p.getDoctor(), CommonConstants.PatientDetails.Status.WAITING);
 		}catch (Exception ex) {
 			logger.error("Exception:", ex);
+		}finally{
+			
+		}
+	}
+	public void historicalDataCookUp(long count) throws Exception{
+		try{
+			Random random = new Random();
+			String patient_names_bag[] = {"ABHI","ALOK","Aaditya","Aashna","Aastha","Abhinav","Abhishek","Abigail","Aditi","Aditya","Aishwarya","Ajay","Ajeet","Akansha","Akshay",
+					"Amit","Angel","Aniket","Anil","Anirudh","Anish","Anisha","Anjali","Anjana","Ankit","Anubhav","Anurag","Anusha","Anushri","Archita","Arjun","Arun",
+					"Arusha","Arya","Aryan","Ashish","Aswini","Avi","Avinash","Ayushi","Chandralekha","Crowny","Dawn","Deep","Deepak","Deepro","Dhruv","Dilmini","GIRISH",
+					"Gayatri","Harish","Ira","Isha","Ishita","Jatin","Kalyani","Karan","Kartik","Katherine","Khushi","Krishna","Kunal","Lavanya","Lily","MOHIT","Mahima",
+					"Manoj","Mary","Mayank","Mitali","N.Priyanka","NISHA","Naveen","Neelam","Neeraj","Neha","Niharika","Nikhil","Nikita","Nishant","Nishita","Niti","Nitin",
+					"PRATEEK","Paaus","Papuii colney","Parth","Pavithra","Pranav","Prashant","Pratik","Priyanka","ROHIT","Radhika","Raghav","Raj","Rajeev","Raju","Ram",
+					"Ramanan","Rashi","Rishabh","Rishita","Rohan","Rutuja","SHAIL","SUNNY","SURESH","Sadaf","Sakshi","Sam","Sam","Shashank","Shekhar","Shreya","Siddharth",
+					"Siya","Sneha","Soham","Suhani","Sumit","Sunil","Tanya","Tisha","Vaibhav","Varun","Vinay","abdul","ajith","akash","anamika","ananya","ankur","anu",
+					"arti","atul","debbie","deepa","dia","diksha","dinesh","divya","diya","gokul","indhumathi","ishika","jay","john","juvina","kamalika","kavya","krish",
+					"krithika","kumar","leah","mahesh","manish","manisha","manu","mayur","moii chhangte","natasha","nishi","pawan","prachi","prince","priya","rahul",
+					"rakesh","ramya","rhea","ria","riya","sanchit","sanjana","sanjay","sara","sarah","sasashy","seema","shaan","shivam","shivangi","shivani","shrinidhi",
+					"shyam","simran","swati","tanu","tanvi","tushar","vaishnavi","vani","varsha","vedant","vidhya","vikas","vishal","vivek","yash"};
+			String locations_bag[] = {"Kancheepuram", "Delhi", "Gurgaon", "Coimbatore", "Bangalore", "Chennai", "Hydrabed", "Pune", "San Francisco", "SunnyVale", "Santa Clara", "Berlin", "Hamburg", "Bristol", "York"};
+			SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+	        String minDateStr = "01-01-2016 00:00:00";
+	        String maxDateStr = "31-12-2016 23:59:59";            
+			List<TreatmentType> treatmentTypeList = getTreatmentTypeList();
+			for(long i=0;i<count;i++){
+				PatientDetails p = new PatientDetails();
+				p.setPatient_id((int)getNewPatientId());
+				p.setPatient_name(patient_names_bag[RandomUtil.getRandomInt(0, 199)]);
+				p.setPatient_age(RandomUtil.getRandomInt(0, 70));
+				p.setLocation(locations_bag[RandomUtil.getRandomInt(0, 14)]);
+				
+				TreatmentType treatmentType = treatmentTypeList.get(RandomUtil.getRandomInt(0, treatmentTypeList.size()-1));
+				p.setTreatment_type(treatmentType.getTreatmentType());
+				p.setToken_number(getNewTokenNumber(treatmentType.getTreatmentType()).toString());
+				p.setDoctor(treatmentType.getDoctorList().get(RandomUtil.getRandomInt(0, 2)));						
+				
+				Date admission_TS = RandomUtil.getRandomDate(formatter.parse(minDateStr),formatter.parse(maxDateStr));				
+				p.setAdmission_TS(admission_TS);
+				
+				Calendar treatmentStartCalender = Calendar.getInstance();
+				treatmentStartCalender.setTimeInMillis(admission_TS.getTime());
+				treatmentStartCalender.add(Calendar.SECOND, RandomUtil.getRandomInt(1000, 18000));			    
+				p.setTreatment_start_TS(treatmentStartCalender.getTime());
+				
+				Calendar treatmentCompleteCalender = Calendar.getInstance();
+				treatmentCompleteCalender.setTimeInMillis(treatmentStartCalender.getTime().getTime());
+				treatmentCompleteCalender.add(Calendar.SECOND, RandomUtil.getRandomInt(1000, 3000));
+				p.setTreatment_complete_TS(treatmentCompleteCalender.getTime());
+				p.setStatus(CommonConstants.PatientDetails.Status.COMPLETED);
+				
+				StringBuilder insertQueryBuilder=new StringBuilder("INSERT INTO patient_details(patient_id, patient_name, patient_age, location, treatment_type,")
+						.append("token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
+				cassandraConnection.getSession().execute(insertQueryBuilder.toString(),p.getPatient_id(),p.getPatient_name(),p.getPatient_age(),p.getLocation(),
+						p.getTreatment_type(),p.getToken_number(),p.getAdmission_TS(),p.getTreatment_start_TS(),p.getTreatment_complete_TS(),p.getDoctor(), p.getStatus());
+				String patientString = eventProcessUtil.getEventString(p);
+				kafkaUtil.sendMessage(patientString);
+			}
+			
+		}catch (Exception ex) {
+			throw ex;
 		}finally{
 			
 		}
@@ -85,8 +176,38 @@ public class TreatmentTypeDAO {
 	public List<PatientDetails> getPatientListForTreatment(){
 		List<PatientDetails> patientDetailsList = new ArrayList<PatientDetails>();
 		try{
-			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts FROM patient_details");
-			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString());
+			String statuses[] = {CommonConstants.PatientDetails.Status.WAITING, CommonConstants.PatientDetails.Status.STARTED};
+			for(String status:statuses){
+				StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? ALLOW FILTERING");
+				ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(), status);
+				for(Row row:resultSet.all()){
+					PatientDetails patientDetails = new PatientDetails();
+					patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
+					patientDetails.setPatient_name(row.getString(CommonConstants.PatientDetails.PATIENT_NAME));
+					patientDetails.setPatient_age(row.getInt(CommonConstants.PatientDetails.PATIENT_AGE));
+					patientDetails.setLocation(row.getString(CommonConstants.PatientDetails.LOCATION));
+					patientDetails.setTreatment_type(row.getString(CommonConstants.PatientDetails.TREATMENT_TYPE));
+					patientDetails.setToken_number(row.getString(CommonConstants.PatientDetails.TOKEN_NUMBER));
+					patientDetails.setAdmission_TS(row.getTimestamp(CommonConstants.PatientDetails.ADMISSION_TS));
+					patientDetails.setTreatment_start_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_START_TS));
+					patientDetails.setTreatment_complete_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS));
+					patientDetails.setDoctor(row.getString(CommonConstants.PatientDetails.DOCTOR));
+					patientDetails.setStatus(row.getString(CommonConstants.PatientDetails.STATUS));
+					patientDetailsList.add(patientDetails);
+				}
+			}
+		}catch (Exception ex) {
+			logger.error("Exception:", ex);
+		}finally{
+			return patientDetailsList;
+		}
+	}
+	
+	public List<PatientDetails> getTreatmentCompletedPatientList(){
+		List<PatientDetails> patientDetailsList = new ArrayList<PatientDetails>();
+		try{
+			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? ALLOW FILTERING");
+			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),CommonConstants.PatientDetails.Status.COMPLETED);
 			for(Row row:resultSet.all()){
 				PatientDetails patientDetails = new PatientDetails();
 				patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
@@ -98,6 +219,8 @@ public class TreatmentTypeDAO {
 				patientDetails.setAdmission_TS(row.getTimestamp(CommonConstants.PatientDetails.ADMISSION_TS));
 				patientDetails.setTreatment_start_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_START_TS));
 				patientDetails.setTreatment_complete_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS));
+				patientDetails.setDoctor(row.getString(CommonConstants.PatientDetails.DOCTOR));
+				patientDetails.setStatus(row.getString(CommonConstants.PatientDetails.STATUS));
 				patientDetailsList.add(patientDetails);
 			}
 		}catch (Exception ex) {
@@ -107,10 +230,46 @@ public class TreatmentTypeDAO {
 		}
 	}
 	
+	public void startTreatmentForPatientId(int patientId){
+		try{
+			StringBuilder queryBuilder=new StringBuilder("UPDATE patient_details SET treatment_start_ts = ?, status = ? WHERE patient_id = ?");
+			cassandraConnection.getSession().execute(queryBuilder.toString(), new Date(),CommonConstants.PatientDetails.Status.STARTED, patientId);			
+		}catch (Exception ex) {
+			logger.error("Exception:", ex);
+		}finally{
+		}
+	}
+	public void completeTreatmentForPatientId(int patientId){
+		try{
+			StringBuilder queryBuilder=new StringBuilder("UPDATE patient_details SET treatment_complete_ts = ?, status = ? WHERE patient_id = ?");
+			cassandraConnection.getSession().execute(queryBuilder.toString(), new Date(),CommonConstants.PatientDetails.Status.COMPLETED, patientId);			
+		}catch (Exception ex) {
+			logger.error("Exception:", ex);
+		}finally{
+		}
+	}
+	
 	public CassandraConnection getCassandraConnection() {
 		return cassandraConnection;
 	}
 	public void setCassandraConnection(CassandraConnection cassandraConnection) {
 		this.cassandraConnection = cassandraConnection;
 	}
+
+	public KafkaUtil getKafkaUtil() {
+		return kafkaUtil;
+	}
+
+	public void setKafkaUtil(KafkaUtil kafkaUtil) {
+		this.kafkaUtil = kafkaUtil;
+	}
+
+	public EventProcessUtil getEventProcessUtil() {
+		return eventProcessUtil;
+	}
+
+	public void setEventProcessUtil(EventProcessUtil eventProcessUtil) {
+		this.eventProcessUtil = eventProcessUtil;
+	}
+	
 }
