@@ -3,7 +3,10 @@ package com.harish.rtqwta.util;
 import java.util.UUID;
 
 import com.harish.rtqwta.bolts.AgeBolt;
+import com.harish.rtqwta.bolts.DayDateHourBolt;
+import com.harish.rtqwta.bolts.GenderBolt;
 import com.harish.rtqwta.bolts.TimeCalculationBolt;
+import com.harish.rtqwta.bolts.TreatmentTypeBolt;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -34,7 +37,10 @@ public class StromEngine {
             TopologyBuilder builder = new TopologyBuilder();
             builder.setSpout("Kafka-Spout", new KafkaSpout(kafkaSpoutConfig));
             builder.setBolt("TimeCalulation-Bolt", new TimeCalculationBolt()).shuffleGrouping("Kafka-Spout");
-            builder.setBolt("AgeBolt", new AgeBolt()).shuffleGrouping("TimeCalulation-Bolt");              
+            builder.setBolt("AgeBolt", new AgeBolt()).shuffleGrouping("TimeCalulation-Bolt");
+            builder.setBolt("GenderBolt", new GenderBolt()).shuffleGrouping("TimeCalulation-Bolt");
+            builder.setBolt("TreatmentTypeBolt", new TreatmentTypeBolt()).shuffleGrouping("TimeCalulation-Bolt");
+            builder.setBolt("DayDateHourBolt", new DayDateHourBolt()).shuffleGrouping("TimeCalulation-Bolt");
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("KafkaStormSample", config, builder.createTopology());
 

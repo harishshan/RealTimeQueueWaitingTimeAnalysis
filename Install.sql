@@ -10,11 +10,16 @@ INSERT INTO  rtqwta.treatment_type(treatment_type_id, treatment_type, doctor_lis
 
 
 CREATE TABLE rtqwta.common_counter(counter_value counter,table_name  text, PRIMARY KEY (table_name));
-UPDATE rtqwta.common_counter SET counter_value = counter_value + 1 WHERE table_name='Patient';
+UPDATE rtqwta.common_counter SET counter_value = counter_value + 0 WHERE table_name='Patient';
+UPDATE rtqwta.common_counter SET counter_value = counter_value + 0 WHERE table_name='Historical_Patient';
 
-CREATE TABLE rtqwta.patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, location text, treatment_type text, 
+CREATE TABLE rtqwta.patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, patient_gender text, location text, treatment_type text, 
+	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text, expected_treatment_start_ts timestamp, expected_treatment_complete_ts timestamp);
+CREATE TABLE rtqwta.historical_patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, patient_gender text, location text, treatment_type text, 
 	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text);
 	
 CREATE TABLE rtqwta.analysis(category text, sub_category text, patients_count bigint, total_waiting_time bigint, avg_waiting_time bigint, total_treatment_time bigint, avg_treatment_time bigint, 
+	PRIMARY KEY(category, sub_category));
+CREATE TABLE rtqwta.historical_analysis(category text, sub_category text, patients_count bigint, total_waiting_time bigint, avg_waiting_time bigint, total_treatment_time bigint, avg_treatment_time bigint, 
 	PRIMARY KEY(category, sub_category));
 

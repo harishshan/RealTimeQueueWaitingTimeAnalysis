@@ -6,16 +6,20 @@ public class PatientDetails {
 	private int patient_id;
 	private String patient_name;
 	private int patient_age;
+	private String patient_gender;
 	private String location;
 	private String token_number;
 	private String treatment_type;
 	private Date  admission_TS;
 	private Date treatment_start_TS;
 	private Date treatment_complete_TS;
-	private String doctor;
+	private String doctor_name;
 	private String status;
 	private long waitingTime;
 	private long treatmentTime;
+	private String patient_type;
+	private Date expected_treatment_start_ts;
+	private Date expected_treatment_complete_ts;
 	public int getPatient_id() {
 		return patient_id;
 	}
@@ -34,6 +38,13 @@ public class PatientDetails {
 	public void setPatient_age(int patient_age) {
 		this.patient_age = patient_age;
 	}
+	
+	public String getPatient_gender() {
+		return patient_gender;
+	}
+	public void setPatient_gender(String patient_gender) {
+		this.patient_gender = patient_gender;
+	}
 	public String getLocation() {
 		return location;
 	}
@@ -46,6 +57,8 @@ public class PatientDetails {
 	public void setToken_number(String token_number) {
 		this.token_number = token_number;
 	}
+	
+	
 	public String getTreatment_type() {
 		return treatment_type;
 	}
@@ -70,11 +83,12 @@ public class PatientDetails {
 	public void setTreatment_complete_TS(Date treatment_complete_TS) {
 		this.treatment_complete_TS = treatment_complete_TS;
 	}
-	public String getDoctor() {
-		return doctor;
+	
+	public String getDoctor_name() {
+		return doctor_name;
 	}
-	public void setDoctor(String doctor) {
-		this.doctor = doctor;
+	public void setDoctor_name(String doctor_name) {
+		this.doctor_name = doctor_name;
 	}
 	public String getStatus() {
 		return status;
@@ -93,6 +107,24 @@ public class PatientDetails {
 	}
 	public void setTreatmentTime(long treatmentTime) {
 		this.treatmentTime = treatmentTime;
+	}
+	public String getPatient_type() {
+		return patient_type;
+	}
+	public void setPatient_type(String patient_type) {
+		this.patient_type = patient_type;
+	}
+	public Date getExpected_treatment_start_ts() {
+		return expected_treatment_start_ts;
+	}
+	public void setExpected_treatment_start_ts(Date expected_treatment_start_ts) {
+		this.expected_treatment_start_ts = expected_treatment_start_ts;
+	}
+	public Date getExpected_treatment_complete_ts() {
+		return expected_treatment_complete_ts;
+	}
+	public void setExpected_treatment_complete_ts(Date expected_treatment_complete_ts) {
+		this.expected_treatment_complete_ts = expected_treatment_complete_ts;
 	}
 	
 

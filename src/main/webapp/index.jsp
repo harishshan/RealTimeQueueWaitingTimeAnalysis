@@ -19,6 +19,7 @@
 	        mainApp.controller('patientAdmission', function($scope, $http) {
 	        	var url = "getTreatmentType";
 	        	$scope.patient = {};
+	        	$scope.genderTypeList = [{"Name":"Male"},{"Name":"Female"},{"Name":"Others"}];
         		$http.get(url).success( function(response) {
         			$scope.treatmentTypeList = response; 
         		});
@@ -30,7 +31,18 @@
         			var url = "getNewTokenNumber/"+$scope.patient.treatment_type;
         			$http.get(url).success( function(response) {
             			$scope.patient.token_number = response; 
-            		});        			
+            		});
+        			var url = "getDoctorList/"+$scope.patient.treatment_type;
+        			$http.get(url).success( function(response) {
+            			$scope.DoctorList = response; 
+            		});
+        		}
+        		$scope.clearFrom = function(){
+        			$scope.patient = {};
+        			var url = "getNewPatientId";
+            		$http.get(url).success( function(response) {
+            			$scope.patient.patient_id = response; 
+            		});
         		}
         		$scope.admitPatient = function(){
         			if($scope.patient.patient_id==0 || $scope.patient.patient_id==""){
@@ -39,11 +51,15 @@
         				alertify.alert('Warn','Validation Error: Patient name must be entered');
         			}else if($scope.patient.patient_age=="" || $scope.patient.patient_age==undefined || (!angular.isNumber(+$scope.patient.patient_age))){
         				alertify.alert('Warn','Validation Error: Patient age must be entered an integer value');
-        			}else if($scope.patient.location==""|| $scope.patient.location==undefined){
+        			}else if($scope.patient.patient_age=="" || $scope.patient.patient_age==undefined || (!angular.isNumber(+$scope.patient.patient_age))){
+        				alertify.alert('Warn','Validation Error: Patient age must be entered an integer value');
+        			}else if($scope.patient.patient_gender==""|| $scope.patient.patient_gender==undefined){
         				alertify.alert('Warn','Validation Error: Location must be entered');
-        			}else if($scope.patient.treatment_type==""|| $scope.patient.treatment_type==undefined){
-        				alertify.alert('Warn','Validation Error: Treatment type must be entered');
+        			}else if($scope.patient.treatment_type==undefined || $scope.patient.treatment_type==""|| $scope.patient.treatment_type==undefined){
+        				alertify.alert('Warn','Validation Error: Treatment type must be selected');
         			}else if($scope.patient.token_number==0 || $scope.patient.token_number=="" || $scope.patient.token_number ==undefined){
+        				alertify.alert('Warn','Validation Error: Token number must not be 0 or empty');
+        			}else if($scope.patient.doctor_name=="" || $scope.patient.doctor_name ==undefined){
         				alertify.alert('Warn','Validation Error: Token number must not be 0 or empty');
         			} else {
         				var url = "admitPatient";        			
@@ -67,6 +83,7 @@
 					<li class="active"><a href="/rtqwta/">Patient Admission</a></li>
 					<li><a href="treatment.jsp">Treatment</a></li>
 					<li><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
+					<li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
@@ -109,6 +126,12 @@
 							<label>Patient Age</label><input type="text" name="patient_age" id="patient_age" align="right" ng-model="patient.patient_age" placeholder="Enter Patient Age" class="form-control" required="required">
 						</div>
 						<div class="form-group">
+							<label>Patient Gender</label>
+							<select name="patient_gender" id="patient_gender" ng-model="patient.patient_gender" class="form-control" required="required">
+									<option ng-repeat="genderType in genderTypeList" value="{{genderType.Name}}">{{genderType.Name}}</option>
+							</select>							
+						</div>
+						<div class="form-group">
 							<label>Location</label>
 							<input type="text" name="location" id="location" align="right" ng-model="patient.location" placeholder="Enter Location" class="form-control" required="required">
 						</div>
@@ -117,13 +140,19 @@
 							<select name="treatment_type" id="treatment_type" ng-model="patient.treatment_type" ng-change="treatmentTypeSelectChange()" class="form-control" required="required">
 									<option ng-repeat="treatmentType in treatmentTypeList" value="{{treatmentType.Treatment_Type}}">{{treatmentType.Treatment_Type}}</option>
 							</select>							
-						</div>
+						</div>						
 						<div class="form-group">
 							<label>Token Number</label>
 							<input type="text" name="token_number" id="token_number" align="right" ng-model="patient.token_number" class="form-control" readonly="readonly" required="required">
 						</div>
+						<div class="form-group">
+							<label>Doctor</label>
+							<select name="doctor_name" id="doctor_name" ng-model="patient.doctor_name" class="form-control" required="required">
+									<option ng-repeat="doctor in DoctorList" value="{{doctor.Doctor_Name}}">{{doctor.Doctor_Name}}</option>
+							</select>							
+						</div>
 						<div class="form-group" align="right">
-							<button type="button" class="btn btn-danger">Clear</button>
+							<button type="button" class="btn btn-danger" ng-click="clearFrom()">Clear</button>
 							<button type="submit" class="btn btn-success" ng-click="admitPatient()">Admit Patient</button>							
 						</div>
 					</div>	

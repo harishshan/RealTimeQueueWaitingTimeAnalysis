@@ -32,6 +32,7 @@
 					<li><a href="/rtqwta/">Patient Admission</a></li>
 					<li><a href="treatment.jsp">Treatment</a></li>					
 					<li class="active"><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
+					<li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>

@@ -60,6 +60,7 @@
 					<li><a href="/rtqwta/">Patient Admission</a></li>
 					<li class="active"><a href="treatment.jsp">Treatment</a></li>					
 					<li><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
+					<li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
@@ -102,6 +103,8 @@
 										<td>Token Number</td>
 										<td>Doctor</td>
 										<td>Admission Timestamp</td>
+										<td>Expected Start Time</td>
+										<td>Expected Complete Time</td>
 										<td>Start Time</td>
 										<td>Complete Time</td>
 										<td>Action</td>
@@ -117,6 +120,8 @@
 										<td>{{patientDetails.token_number}}</td>
 										<td>{{patientDetails.doctor}}</td>
 										<td>{{patientDetails.admission_ts}}</td>
+										<td>{{patientDetails.expected_treatment_start_ts}}</td>
+										<td>{{patientDetails.expected_treatment_complete_ts}}</td>
 										<td>{{patientDetails.treatment_start_ts}}</td>
 										<td>{{patientDetails.treatment_complete_ts}}</td>
 										<td>

@@ -70,7 +70,7 @@ public class CommonController {
     public @ResponseBody long getNewPatientId(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
     	long newPatientId=0;
         try {
-        	newPatientId = treatmentTypeDAO.getNewPatientId();        	
+        	newPatientId = treatmentTypeDAO.getNewPatientId(CommonConstants.CommonCounter.PATIENT);        	
         } catch (Exception ex) {
         	logger.error("Exception:", ex);
         } finally{
@@ -78,6 +78,22 @@ public class CommonController {
         }
     }
     
+    @RequestMapping(value = "/getDoctorList/{treatmentType}", method = RequestMethod.GET)
+    public @ResponseBody JsonArray getDoctorList(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable String treatmentType) {
+    	JsonArray jsonArray = new JsonArray();
+        try {
+        	List<String> doctorList = treatmentTypeDAO.getDoctorList(treatmentType);
+        	for(String doctor: doctorList){
+	        	JsonObject doctorJsonObject = new JsonObject();
+				doctorJsonObject.addProperty(CommonConstants.TreatmentType.DOCTOR_NAME, doctor);
+				jsonArray.add(doctorJsonObject);
+        	}
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        } finally{
+        	return jsonArray;
+        }
+    }
     @RequestMapping(value = "/getNewTokenNumber/{treatmentType}", method = RequestMethod.GET)
     public @ResponseBody long getNewTokenNumber(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable String treatmentType) {
     	long newTokenNumber=0;
@@ -117,14 +133,17 @@ public class CommonController {
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_GENDER, patientDetails.getPatient_gender());
         		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
         		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
         		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor_name());
         		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.EXPECTED_TREATMENT_START_TS, patientDetails.getExpected_treatment_start_ts()!=null?patientDetails.getExpected_treatment_start_ts().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.EXPECTED_TREATMENT_COMPLETE_TS, patientDetails.getExpected_treatment_complete_ts()!=null?patientDetails.getExpected_treatment_complete_ts().toString():null);
         		patientList.add(jsonObject);
         	}
         } catch (Exception ex) {
@@ -144,13 +163,42 @@ public class CommonController {
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
         		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_GENDER, patientDetails.getPatient_gender());
         		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
         		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
         		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
         		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor_name());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
+        		patientList.add(jsonObject);
+        	}
+        } catch (Exception ex) {
+        	logger.error("Exception:", ex);
+        } finally{
+        	return patientList;
+        }
+    }
+    @RequestMapping(value = "/getHistoricalTreatmentCompletedPatientList", method = RequestMethod.GET)
+    public @ResponseBody JsonArray getHistoricalTreatmentCompletedPatientList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+    	JsonArray patientList = new JsonArray();
+        try {
+        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getHistoricalTreatmentCompletedPatientList();
+        	Collections.sort(patientDetailsList, new PatientDetailsComparator());
+        	for(PatientDetails patientDetails: patientDetailsList){
+        		JsonObject jsonObject= new JsonObject();
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_GENDER, patientDetails.getPatient_gender());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
+        		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
+        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor_name());
         		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
         		patientList.add(jsonObject);
         	}

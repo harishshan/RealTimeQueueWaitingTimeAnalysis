@@ -53,7 +53,7 @@ public class AgeBolt implements IRichBolt {
 		cassandraConnection.setPort(9042);
 		cassandraConnection.initMethod();
 		treatmentTypeDAO.setCassandraConnection(cassandraConnection);	
-		treatmentTypeDAO.updateAnalysis(analysis);
+		treatmentTypeDAO.updateAnalysis(analysis, patientDetails.getPatient_type());
 		cassandraConnection.getSession().close();
 		cassandraConnection.getCluster().close();
 		collector.ack(input);
