@@ -38,14 +38,12 @@ public class StromEngine {
             builder.setSpout("Kafka-Spout", new KafkaSpout(kafkaSpoutConfig));
             builder.setBolt("TimeCalulation-Bolt", new TimeCalculationBolt()).shuffleGrouping("Kafka-Spout");
             builder.setBolt("AgeBolt", new AgeBolt()).shuffleGrouping("TimeCalulation-Bolt");
-            builder.setBolt("GenderBolt", new GenderBolt()).shuffleGrouping("TimeCalulation-Bolt");
-            builder.setBolt("TreatmentTypeBolt", new TreatmentTypeBolt()).shuffleGrouping("TimeCalulation-Bolt");
-            builder.setBolt("DayDateHourBolt", new DayDateHourBolt()).shuffleGrouping("TimeCalulation-Bolt");
+            builder.setBolt("GenderBolt", new GenderBolt()).shuffleGrouping("AgeBolt");
+            builder.setBolt("TreatmentTypeBolt", new TreatmentTypeBolt()).shuffleGrouping("GenderBolt");
+            builder.setBolt("DayDateHourBolt", new DayDateHourBolt()).shuffleGrouping("TreatmentTypeBolt");
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("KafkaStormSample", config, builder.createTopology());
-
-            Thread.sleep(Long.MAX_VALUE);
-            
+            Thread.sleep(Long.MAX_VALUE);     
             cluster.shutdown();
         }catch(Exception ex){
         	ex.printStackTrace();

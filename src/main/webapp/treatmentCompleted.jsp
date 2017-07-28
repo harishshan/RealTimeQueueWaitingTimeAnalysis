@@ -17,22 +17,31 @@
 		<script>
 	        var mainApp = angular.module("mainApp", []);
 	        mainApp.controller('treatmentCompletedView', function($scope, $http) {
-	        	var url = "getTreatmentCompletedPatientList";
-        		$http.get(url).success( function(response) {
-        			$scope.patientDetailsList = response; 
+	        	$scope.treatmentListShow = false;	        	
+	        	var url = "getTreatmentType";
+	        	$http.get(url).success( function(response) {
+        			$scope.treatmentTypeList = response;        			
         		});
+	        	$scope.treatmentTypeSelectChange = function(){
+	        		var url = "getTreatmentCompletedPatientList/"+$scope.treatment_type;
+	        		$http.get(url).success( function(response) {
+	        			$scope.patientDetailsList = response;
+            			$scope.treatmentListShow = true;
+            		});        			
+        		}
+	        	
 	        });
       	</script>
 	</head>
 	<body>
-		<div class="container">
+		<div class="container1">
 		<nav class="navbar navbar-inverse">
 			<div class="container-fluid">
 				<ul class="nav navbar-nav">
 					<li><a href="/rtqwta/">Patient Admission</a></li>
 					<li><a href="treatment.jsp">Treatment</a></li>					
 					<li class="active"><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
-					<li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li>
+					<!-- <li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li> -->
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
@@ -64,17 +73,32 @@
 				<div class="panel-body">
 					<div ng-app="mainApp" ng-controller="treatmentCompletedView" class="modal-body">
 						<div class="table-responsive">
-							<table  align="center"  class="table table-hover table-bordered">
+							<div class="form-group">
+								<table>
+									<tr>
+										<td>
+											<label>Treatment Type</label>
+										</td>
+										<td>
+											<select name="treatment_type" id="treatment_type" ng-model="treatment_type" ng-change="treatmentTypeSelectChange()" class="form-control" style="width:100%;" required="required">
+												<option ng-repeat="treatmentType in treatmentTypeList" value="{{treatmentType.Treatment_Type}}">{{treatmentType.Treatment_Type}}</option>
+											</select>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<table  align="center"  class="table table-hover table-bordered" ng-show="treatmentListShow">
 								<thead class="thead-inverse">									
 									<tr>
 										<td>Patient ID</td>										
-										<td>Patient Name</td>
-										<td>Patient Age</td>
+										<td>Name</td>
+										<td>Age</td>
+										<td>Gender</td>
 										<td>Location</td>
 										<td>Treatment Type</td>
-										<td>Token Number</td>
+										<td>Token No</td>
 										<td>Doctor</td>
-										<td>Admission Timestamp</td>
+										<td>Admission Time</td>
 										<td>Start Time</td>
 										<td>Complete Time</td>
 									</tr>
@@ -84,6 +108,7 @@
 										<th scope="row">{{patientDetails.patient_id}}</th>
 										<td>{{patientDetails.patient_name}}</td>
 										<td>{{patientDetails.patient_age}}</td>
+										<td>{{patientDetails.patient_gender}}</td>
 										<td>{{patientDetails.location}}</td>
 										<td>{{patientDetails.treatment_type}}</td>
 										<td>{{patientDetails.token_number}}</td>

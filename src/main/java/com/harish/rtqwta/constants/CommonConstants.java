@@ -13,6 +13,10 @@ public class CommonConstants {
 		public static final String COUNTER_VALUE = "counter_value";
 		public static final String TABLE_NAME = "table_name";
 	}
+	public static class LastWaitingTime{
+		public static final String TIME = "time";
+		public static final String UPDATED_TIMESTAMP= "updated_timestamp";
+	}
 	public static class PatientDetails{
 		public static final String PATIENT_ID = "patient_id";
 		public static final String PATIENT_NAME = "patient_name";
@@ -25,8 +29,9 @@ public class CommonConstants {
 		public static final String TREATMENT_START_TS = "treatment_start_ts";
 		public static final String TREATMENT_COMPLETE_TS = "treatment_complete_ts";
 		public static final String DOCTOR = "doctor";
-		public static final String EXPECTED_TREATMENT_START_TS = "expected_treatment_start_ts";
-		public static final String EXPECTED_TREATMENT_COMPLETE_TS = "expected_treatment_complete_ts";
+		public static final String AVERAGE_WAITING_TIME = "average_waiting_time";
+		public static final String AVERAGE_TREATMENT_TIME = "average_treatment_time";
+		public static final String TREATMENT_TIME = "treatment_time";
 		public static final String STATUS = "status";
 		public static class Status{
 			public static final String COMPLETED ="C";

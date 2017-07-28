@@ -14,7 +14,7 @@ UPDATE rtqwta.common_counter SET counter_value = counter_value + 0 WHERE table_n
 UPDATE rtqwta.common_counter SET counter_value = counter_value + 0 WHERE table_name='Historical_Patient';
 
 CREATE TABLE rtqwta.patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, patient_gender text, location text, treatment_type text, 
-	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text, expected_treatment_start_ts timestamp, expected_treatment_complete_ts timestamp);
+	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text);
 CREATE TABLE rtqwta.historical_patient_details(patient_id int PRIMARY KEY,patient_name  text, patient_age int, patient_gender text, location text, treatment_type text, 
 	token_number text, admission_ts timestamp, treatment_start_ts timestamp, treatment_complete_ts timestamp, doctor text, status text);
 	
@@ -23,3 +23,21 @@ CREATE TABLE rtqwta.analysis(category text, sub_category text, patients_count bi
 CREATE TABLE rtqwta.historical_analysis(category text, sub_category text, patients_count bigint, total_waiting_time bigint, avg_waiting_time bigint, total_treatment_time bigint, avg_treatment_time bigint, 
 	PRIMARY KEY(category, sub_category));
 
+CREATE TABLE rtqwta.last_waiting_time(treatment_type text PRIMARY KEY,time bigint, updated_timestamp timestamp);
+
+
+insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('AGE','20',1,600,600,1200,1200);
+	
+	insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('AGE','20-40',1,600,600,1200,1200);
+	
+	insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('AGE','40-60',1,600,600,1200,1200);
+	insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('AGE','60-80',1,600,600,1200,1200);
+	insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('AGE','80',1,600,600,1200,1200);
+	
+	insert into historical_analysis(category , sub_category , patients_count , total_waiting_time , 
+	avg_waiting_time , total_treatment_time , avg_treatment_time) VALUES('TREATMENT_TYPE','CT-Scan',1,600,600,1200,1200);

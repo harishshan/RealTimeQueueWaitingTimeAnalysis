@@ -25,6 +25,7 @@ import com.harish.rtqwta.constants.CommonConstants;
 import com.harish.rtqwta.dao.TreatmentTypeDAO;
 import com.harish.rtqwta.entity.PatientDetails;
 import com.harish.rtqwta.entity.TreatmentType;
+import com.harish.rtqwta.util.CommonUtil;
 import com.harish.rtqwta.util.PatientDetailsComparator;
 import com.harish.rtqwta.util.TreatmentTypeComparator;
 
@@ -122,41 +123,58 @@ public class CommonController {
         }
     }
     
-    @RequestMapping(value = "/getPatientListForTreatment", method = RequestMethod.GET)
-    public @ResponseBody JsonArray getPatientListForTreatment(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+    @RequestMapping(value = "/getPatientListForTreatment/{treatmentType}", method = RequestMethod.GET)
+    public @ResponseBody JsonArray getPatientListForTreatment(HttpServletRequest request, HttpServletResponse response, HttpSession session,@PathVariable String treatmentType) {
     	JsonArray patientList = new JsonArray();
         try {
-        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getPatientListForTreatment();
-        	Collections.sort(patientDetailsList, new PatientDetailsComparator());
-        	for(PatientDetails patientDetails: patientDetailsList){
-        		JsonObject jsonObject= new JsonObject();
-        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_GENDER, patientDetails.getPatient_gender());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor_name());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
-        		jsonObject.addProperty(CommonConstants.PatientDetails.EXPECTED_TREATMENT_START_TS, patientDetails.getExpected_treatment_start_ts()!=null?patientDetails.getExpected_treatment_start_ts().toString():null);
-        		jsonObject.addProperty(CommonConstants.PatientDetails.EXPECTED_TREATMENT_COMPLETE_TS, patientDetails.getExpected_treatment_complete_ts()!=null?patientDetails.getExpected_treatment_complete_ts().toString():null);
-        		patientList.add(jsonObject);
-        	}
+        	String statuses[] = { CommonConstants.PatientDetails.Status.STARTED, CommonConstants.PatientDetails.Status.WAITING};
+        	long lastUpdatedTreatmentTime = treatmentTypeDAO.getLastTreatmentTime(treatmentType);
+        	int i=0;
+        	long totalTreatmentTime=-(lastUpdatedTreatmentTime);
+			for(String status:statuses){
+	        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getPatientListForTreatment(treatmentType, status);
+	        	Collections.sort(patientDetailsList, new PatientDetailsComparator());	        	
+	        	
+	        	for(PatientDetails patientDetails: patientDetailsList){
+	        		JsonObject jsonObject= new JsonObject();
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_ID, patientDetails.getPatient_id());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_NAME, patientDetails.getPatient_name());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_AGE, patientDetails.getPatient_age());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.PATIENT_GENDER, patientDetails.getPatient_gender());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.LOCATION, patientDetails.getLocation());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TYPE, patientDetails.getTreatment_type());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.TOKEN_NUMBER, patientDetails.getToken_number());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.ADMISSION_TS, patientDetails.getAdmission_TS()!=null?patientDetails.getAdmission_TS().toString():null);
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_START_TS, patientDetails.getTreatment_start_TS()!=null?patientDetails.getTreatment_start_TS().toString():null);
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS, patientDetails.getTreatment_complete_TS()!=null?patientDetails.getTreatment_complete_TS().toString():null);
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.TREATMENT_TIME, CommonUtil.getTreatmentTime(patientDetails.getTreatment_start_TS(),patientDetails.getTreatment_complete_TS()));
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.DOCTOR, patientDetails.getDoctor_name());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.STATUS, patientDetails.getStatus());
+	        		jsonObject.addProperty(CommonConstants.PatientDetails.AVERAGE_TREATMENT_TIME, CommonUtil.getAverageTime(patientDetails.getAverage_treatment_time()));
+	        		//if(status.equals(CommonConstants.PatientDetails.Status.WAITING)){
+	        			if(i==0){
+	        				jsonObject.addProperty(CommonConstants.PatientDetails.AVERAGE_WAITING_TIME, CommonUtil.getAverageTime(0));
+	        			}else{
+	        				jsonObject.addProperty(CommonConstants.PatientDetails.AVERAGE_WAITING_TIME, CommonUtil.getAverageTime(totalTreatmentTime));
+	        			}	        			
+	        		//}
+	        		i++;	        		
+	        		totalTreatmentTime +=patientDetails.getAverage_treatment_time();//<lastCompletedTreatmenttime?patientDetails.getAverage_treatment_time():patientDetails.getTreatmentTime();
+	        		patientList.add(jsonObject);
+	        	}
+			}
         } catch (Exception ex) {
         	logger.error("Exception:", ex);
         } finally{
         	return patientList;
         }
     }
-    @RequestMapping(value = "/getTreatmentCompletedPatientList", method = RequestMethod.GET)
-    public @ResponseBody JsonArray getTreatmentCompletedPatientList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+    
+    @RequestMapping(value = "/getTreatmentCompletedPatientList/{treatmentType}", method = RequestMethod.GET)
+    public @ResponseBody JsonArray getTreatmentCompletedPatientList(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable String treatmentType) {
     	JsonArray patientList = new JsonArray();
         try {
-        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getTreatmentCompletedPatientList();
+        	List<PatientDetails> patientDetailsList = treatmentTypeDAO.getTreatmentCompletedPatientList(treatmentType);
         	Collections.sort(patientDetailsList, new PatientDetailsComparator());
         	for(PatientDetails patientDetails: patientDetailsList){
         		JsonObject jsonObject= new JsonObject();
@@ -227,8 +245,8 @@ public class CommonController {
     public @ResponseBody JsonObject completeTreatmentForPatientId(HttpServletRequest request, HttpServletResponse response, HttpSession session, @PathVariable int patientId) {
     	JsonObject jsonObject =new JsonObject();
         try {
-        	treatmentTypeDAO.completeTreatmentForPatientId(patientId);
-        	jsonObject.addProperty("message", "Treatment completed successfully");
+        	long treatmenttime=treatmentTypeDAO.completeTreatmentForPatientId(patientId);
+        	jsonObject.addProperty("message", "Treatment completed successfully</br> Time taken "+CommonUtil.getAverageTime(treatmenttime));
         } catch (Exception ex) {
         	logger.error("Exception:", ex);
         	jsonObject.addProperty("error", ex.getMessage());

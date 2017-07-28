@@ -15,6 +15,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
 public class AgeBolt implements IRichBolt {
 	private OutputCollector collector;
@@ -27,8 +28,7 @@ public class AgeBolt implements IRichBolt {
 		PatientDetails patientDetails = gson.fromJson(message, PatientDetails.class);
 		int age = patientDetails.getPatient_age();
 		long waitingTime = patientDetails.getWaitingTime();
-		long treatmentTime = patientDetails.getWaitingTime();		
-		String newMessage = gson.toJson(patientDetails, PatientDetails.class);
+		long treatmentTime = patientDetails.getTreatmentTime();
 		
 		Analysis analysis = new Analysis();
 		analysis.setCategory(CommonConstants.Analysis.Category.AGE);
@@ -56,6 +56,8 @@ public class AgeBolt implements IRichBolt {
 		treatmentTypeDAO.updateAnalysis(analysis, patientDetails.getPatient_type());
 		cassandraConnection.getSession().close();
 		cassandraConnection.getCluster().close();
+		String newMessage = gson.toJson(patientDetails, PatientDetails.class);
+		collector.emit(new Values(newMessage));
 		collector.ack(input);
 	}
 

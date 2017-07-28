@@ -20,6 +20,7 @@ import com.harish.rtqwta.entity.Analysis;
 import com.harish.rtqwta.entity.PatientDetails;
 import com.harish.rtqwta.entity.TreatmentType;
 import com.harish.rtqwta.util.CassandraConnection;
+import com.harish.rtqwta.util.DateUtils;
 import com.harish.rtqwta.util.EventProcessUtil;
 import com.harish.rtqwta.util.KafkaUtil;
 import com.harish.rtqwta.util.RandomUtil;
@@ -65,6 +66,23 @@ public class TreatmentTypeDAO {
 		}
 	}
 	
+	public synchronized long getLastTreatmentTime(String treatmentType){
+		long time=0;
+		try{
+			StringBuilder selectQueryBuilder=new StringBuilder("SELECT time, updated_timestamp FROM last_waiting_time WHERE treatment_type=?");
+			ResultSet resultSet=cassandraConnection.getSession().execute(selectQueryBuilder.toString(),treatmentType);
+			Row row=resultSet.one();
+			if(row!=null){
+				Date updatedTimeStamp=row.getTimestamp(CommonConstants.LastWaitingTime.UPDATED_TIMESTAMP);
+				if(updatedTimeStamp!=null && DateUtils.isToday(updatedTimeStamp))
+				time=row.getLong(CommonConstants.LastWaitingTime.TIME);	
+			}		
+		}catch (Exception ex) {
+			logger.error("Exception:", ex);
+		}finally{
+			return time;
+		}
+	}
 	
 	public synchronized Long getNewTokenNumber(String treatmentType){
 		long newTokenNumber=0;
@@ -125,7 +143,6 @@ public class TreatmentTypeDAO {
 	
 	public void admitPatient(PatientDetails p){
 		try{
-			p=calculateExpectedTreatmentTime(p, CommonConstants.CommonCounter.PATIENT);
 			StringBuilder insertQueryBuilder=new StringBuilder("INSERT INTO patient_details(patient_id, patient_name, patient_age, patient_gender, location, treatment_type, ")
 					.append("token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
 			cassandraConnection.getSession().execute(insertQueryBuilder.toString(),p.getPatient_id(),p.getPatient_name(),p.getPatient_age(),p.getPatient_gender(), p.getLocation(),
@@ -138,7 +155,7 @@ public class TreatmentTypeDAO {
 	}
 	public PatientDetails calculateExpectedTreatmentTime(PatientDetails p, String patientType){
 		try{
-			String tableName = "analysis";
+			String tableName = "historical_analysis";
 			if(patientType.equals(CommonConstants.CommonCounter.HISTORICAL_PATIENT)){
 				tableName ="historical_analysis";
 			}
@@ -156,16 +173,18 @@ public class TreatmentTypeDAO {
 				categories.put(CommonConstants.Analysis.Category.AGE,CommonConstants.Analysis.SubCategory.ABOVE_EIGHTY);
 			}
 			String gender = p.getPatient_gender();
-			if(gender.equalsIgnoreCase(CommonConstants.Analysis.SubCategory.MALE)){
-				categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.MALE);
-			} else if(gender.equalsIgnoreCase(CommonConstants.Analysis.SubCategory.FEMALE)){
-				categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.FEMALE);
-			} else{
-				categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.OTHERS);
+			if(gender!=null){
+				if(gender.equalsIgnoreCase(CommonConstants.Analysis.SubCategory.MALE)){
+					categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.MALE);
+				} else if(gender.equalsIgnoreCase(CommonConstants.Analysis.SubCategory.FEMALE)){
+					categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.FEMALE);
+				} else{
+					categories.put(CommonConstants.Analysis.Category.GENDER,CommonConstants.Analysis.SubCategory.OTHERS);
+				}
 			}
-			categories.put(CommonConstants.Analysis.Category.TREATMENT_TYPE,p.getPatient_gender());
+			categories.put(CommonConstants.Analysis.Category.TREATMENT_TYPE,p.getTreatment_type());
 			categories.put(CommonConstants.Analysis.Category.DAY,Integer.toString(p.getAdmission_TS().getDay()));
-			categories.put(CommonConstants.Analysis.Category.DATE,new SimpleDateFormat("ddMMyyyy").format(p.getAdmission_TS()));
+			//categories.put(CommonConstants.Analysis.Category.DATE,new SimpleDateFormat("ddMMyyyy").format(p.getAdmission_TS()));
 			categories.put(CommonConstants.Analysis.Category.HOUR,Integer.toString(p.getAdmission_TS().getHours()));
 			
 			int counter=0;long totalWaitingTime=0;long totalTreatmentTime=0;
@@ -175,24 +194,22 @@ public class TreatmentTypeDAO {
 				ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),category.getKey(), category.getValue());
 				Row row=resultSet.one();
 				if(row!=null){
-					long avgWaitingTime=row.getLong(CommonConstants.Analysis.AVG_WAITING_TIME);
-					long avgTreatmentTime=row.getLong(CommonConstants.Analysis.AVG_TREATMENT_TIME);
-					totalWaitingTime+=avgWaitingTime;
-					totalTreatmentTime+=avgTreatmentTime;
+					totalWaitingTime+=row.getLong(CommonConstants.Analysis.AVG_WAITING_TIME);
+					totalTreatmentTime+=row.getLong(CommonConstants.Analysis.AVG_TREATMENT_TIME);
 					counter++;
-				}				
+				}			
 			}
-			int watitingTime = (int)totalWaitingTime/counter;
-			int treatmentTime = (int)totalTreatmentTime/counter;
-			Calendar treatmentStartCalender = Calendar.getInstance();
+			int avgwaitingTime = (int)totalWaitingTime/counter;
+			int avgtreatmentTime = (int)totalTreatmentTime/counter;
+			p.setAverage_waiting_time(avgwaitingTime);
+			p.setAverage_treatment_time(avgtreatmentTime);
+			/*Calendar treatmentStartCalender = Calendar.getInstance();
 			treatmentStartCalender.setTimeInMillis(p.getAdmission_TS().getTime());
-			treatmentStartCalender.add(Calendar.SECOND, watitingTime);	
-			p.setExpected_treatment_start_ts(treatmentStartCalender.getTime());
+			treatmentStartCalender.add(Calendar.SECOND, watitingTime);
 			
 			Calendar treatmentCompleteCalender = Calendar.getInstance();
 			treatmentCompleteCalender.setTimeInMillis(treatmentStartCalender.getTime().getTime());
-			treatmentCompleteCalender.add(Calendar.SECOND, treatmentTime);
-			p.setExpected_treatment_complete_ts(treatmentCompleteCalender.getTime());
+			treatmentCompleteCalender.add(Calendar.SECOND, treatmentTime);*/
 		}catch (Exception ex) {
 			logger.error("Exception:", ex);
 		}finally{
@@ -222,9 +239,9 @@ public class TreatmentTypeDAO {
 			List<TreatmentType> treatmentTypeList = getTreatmentTypeList();
 			for(long i=0;i<count;i++){
 				PatientDetails p = new PatientDetails();
-				p.setPatient_id((int)getNewPatientId(CommonConstants.CommonCounter.HISTORICAL_PATIENT));
+				p.setPatient_id((int)getNewPatientId(CommonConstants.CommonCounter.PATIENT));
 				p.setPatient_name(patient_names_bag[RandomUtil.getRandomInt(0, 199)]);
-				p.setPatient_age(RandomUtil.getRandomInt(0, 70));
+				p.setPatient_age(RandomUtil.getRandomInt(0, 100));
 				p.setPatient_gender(patient_gender_bag[RandomUtil.getRandomInt(0, 2)]);
 				p.setLocation(locations_bag[RandomUtil.getRandomInt(0, 14)]);
 				
@@ -239,15 +256,15 @@ public class TreatmentTypeDAO {
 				Calendar treatmentStartCalender = Calendar.getInstance();
 				treatmentStartCalender.setTimeInMillis(admission_TS.getTime());
 				treatmentStartCalender.add(Calendar.SECOND, RandomUtil.getRandomInt(1000, 18000));			    
-				p.setTreatment_start_TS(treatmentStartCalender.getTime());
+				//p.setTreatment_start_TS(treatmentStartCalender.getTime());
 				
 				Calendar treatmentCompleteCalender = Calendar.getInstance();
 				treatmentCompleteCalender.setTimeInMillis(treatmentStartCalender.getTime().getTime());
 				treatmentCompleteCalender.add(Calendar.SECOND, RandomUtil.getRandomInt(1000, 3000));
-				p.setTreatment_complete_TS(treatmentCompleteCalender.getTime());
-				p.setStatus(CommonConstants.PatientDetails.Status.COMPLETED);
-				p.setTreatment_type(CommonConstants.CommonCounter.HISTORICAL_PATIENT);
-				StringBuilder insertQueryBuilder=new StringBuilder("INSERT INTO historical_patient_details(patient_id, patient_name, patient_age, patient_gender, location, treatment_type,")
+				//p.setTreatment_complete_TS(treatmentCompleteCalender.getTime());
+				p.setStatus(CommonConstants.PatientDetails.Status.WAITING);
+				p.setPatient_type(CommonConstants.CommonCounter.PATIENT);
+				StringBuilder insertQueryBuilder=new StringBuilder("INSERT INTO patient_details(patient_id, patient_name, patient_age, patient_gender, location, treatment_type,")
 						.append("token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
 				cassandraConnection.getSession().execute(insertQueryBuilder.toString(),p.getPatient_id(),p.getPatient_name(),p.getPatient_age(),p.getPatient_gender(), p.getLocation(),
 						p.getTreatment_type(),p.getToken_number(),p.getAdmission_TS(),p.getTreatment_start_TS(),p.getTreatment_complete_TS(),p.getDoctor_name(), p.getStatus());
@@ -262,34 +279,30 @@ public class TreatmentTypeDAO {
 		}
 	}
 	
-	public List<PatientDetails> getPatientListForTreatment(){
+	public List<PatientDetails> getPatientListForTreatment(String treatment_Type, String status){
 		List<PatientDetails> patientDetailsList = new ArrayList<PatientDetails>();
-		try{
-			String statuses[] = {CommonConstants.PatientDetails.Status.WAITING, CommonConstants.PatientDetails.Status.STARTED};
-			for(String status:statuses){
-				StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status, expected_treatment_start_ts, expected_treatment_complete_ts FROM patient_details where status = ? ALLOW FILTERING");
-				ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(), status);
-				for(Row row:resultSet.all()){
-					PatientDetails patientDetails = new PatientDetails();
-					patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
-					patientDetails.setPatient_name(row.getString(CommonConstants.PatientDetails.PATIENT_NAME));
-					patientDetails.setPatient_age(row.getInt(CommonConstants.PatientDetails.PATIENT_AGE));
-					patientDetails.setPatient_gender(row.getString(CommonConstants.PatientDetails.PATIENT_GENDER));
-					patientDetails.setLocation(row.getString(CommonConstants.PatientDetails.LOCATION));
-					TreatmentType treatmentType = new TreatmentType();
-					treatmentType.setTreatmentType(row.getString(CommonConstants.PatientDetails.TREATMENT_TYPE));
-					patientDetails.setTreatment_type(treatmentType.getTreatmentType());
-					patientDetails.setToken_number(row.getString(CommonConstants.PatientDetails.TOKEN_NUMBER));
-					patientDetails.setAdmission_TS(row.getTimestamp(CommonConstants.PatientDetails.ADMISSION_TS));
-					patientDetails.setTreatment_start_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_START_TS));
-					patientDetails.setTreatment_complete_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS));
-					patientDetails.setDoctor_name(row.getString(CommonConstants.PatientDetails.DOCTOR));
-					patientDetails.setStatus(row.getString(CommonConstants.PatientDetails.STATUS));
-					patientDetails.setExpected_treatment_start_ts(row.getTimestamp(CommonConstants.PatientDetails.EXPECTED_TREATMENT_START_TS));
-					patientDetails.setExpected_treatment_complete_ts(row.getTimestamp(CommonConstants.PatientDetails.EXPECTED_TREATMENT_COMPLETE_TS));
-					patientDetailsList.add(patientDetails);
-				}
-			}
+		try{			
+			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? and treatment_type = ? ALLOW FILTERING");
+			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(), status, treatment_Type);
+			for(Row row:resultSet.all()){
+				PatientDetails patientDetails = new PatientDetails();
+				patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
+				patientDetails.setPatient_name(row.getString(CommonConstants.PatientDetails.PATIENT_NAME));
+				patientDetails.setPatient_age(row.getInt(CommonConstants.PatientDetails.PATIENT_AGE));
+				patientDetails.setPatient_gender(row.getString(CommonConstants.PatientDetails.PATIENT_GENDER));
+				patientDetails.setLocation(row.getString(CommonConstants.PatientDetails.LOCATION));
+				TreatmentType treatmentType = new TreatmentType();
+				treatmentType.setTreatmentType(row.getString(CommonConstants.PatientDetails.TREATMENT_TYPE));
+				patientDetails.setTreatment_type(treatmentType.getTreatmentType());
+				patientDetails.setToken_number(row.getString(CommonConstants.PatientDetails.TOKEN_NUMBER));
+				patientDetails.setAdmission_TS(row.getTimestamp(CommonConstants.PatientDetails.ADMISSION_TS));
+				patientDetails.setTreatment_start_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_START_TS));
+				patientDetails.setTreatment_complete_TS(row.getTimestamp(CommonConstants.PatientDetails.TREATMENT_COMPLETE_TS));
+				patientDetails.setDoctor_name(row.getString(CommonConstants.PatientDetails.DOCTOR));
+				patientDetails.setStatus(row.getString(CommonConstants.PatientDetails.STATUS));
+				patientDetails = calculateExpectedTreatmentTime(patientDetails,treatment_Type);
+				patientDetailsList.add(patientDetails);
+			}			
 		}catch (Exception ex) {
 			logger.error("Exception:", ex);
 		}finally{
@@ -297,11 +310,11 @@ public class TreatmentTypeDAO {
 		}
 	}
 	
-	public List<PatientDetails> getTreatmentCompletedPatientList(){
+	public List<PatientDetails> getTreatmentCompletedPatientList(String treatment_type){
 		List<PatientDetails> patientDetailsList = new ArrayList<PatientDetails>();
 		try{
-			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? ALLOW FILTERING");
-			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),CommonConstants.PatientDetails.Status.COMPLETED);
+			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? AND treatment_type = ? ALLOW FILTERING");
+			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),CommonConstants.PatientDetails.Status.COMPLETED, treatment_type);
 			for(Row row:resultSet.all()){
 				PatientDetails patientDetails = new PatientDetails();
 				patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
@@ -365,12 +378,13 @@ public class TreatmentTypeDAO {
 		}finally{
 		}
 	}
-	public void completeTreatmentForPatientId(int patientId){
+	public long completeTreatmentForPatientId(int patientId){
+		long treatmentTime=0;
 		try{
 			StringBuilder updatequeryBuilder=new StringBuilder("UPDATE patient_details SET treatment_complete_ts = ?, status = ? WHERE patient_id = ?");
 			cassandraConnection.getSession().execute(updatequeryBuilder.toString(), new Date(),CommonConstants.PatientDetails.Status.COMPLETED, patientId);
-			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where status = ? ALLOW FILTERING");
-			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),CommonConstants.PatientDetails.Status.COMPLETED);
+			StringBuilder queryBuilder=new StringBuilder("SELECT patient_id, patient_name, patient_age, patient_gender, location, treatment_type, token_number, admission_ts, treatment_start_ts, treatment_complete_ts, doctor, status FROM patient_details where patient_id = ? ALLOW FILTERING");
+			ResultSet resultSet=cassandraConnection.getSession().execute(queryBuilder.toString(),patientId);
 			Row row =resultSet.one();
 			PatientDetails patientDetails = new PatientDetails();
 			patientDetails.setPatient_id(row.getInt(CommonConstants.PatientDetails.PATIENT_ID));
@@ -390,9 +404,15 @@ public class TreatmentTypeDAO {
 			patientDetails.setPatient_type(CommonConstants.CommonCounter.PATIENT);
 			String patientString = eventProcessUtil.getEventString(patientDetails);
 			kafkaUtil.sendMessage(patientString);
+			treatmentTime=(patientDetails.getTreatment_complete_TS().getTime()/1000)-(patientDetails.getTreatment_start_TS().getTime()/1000);
+			//patientDetails= calculateExpectedTreatmentTime(patientDetails, CommonConstants.CommonCounter.PATIENT);
+			//long time = patientDetails.getAverage_treatment_time() - treatmentTime;
+			StringBuilder insertQueryBuilder=new StringBuilder("UPDATE last_waiting_time SET time = ? ,updated_timestamp = ? WHERE treatment_type = ?");
+			cassandraConnection.getSession().execute(insertQueryBuilder.toString(), treatmentTime, new Date(),treatmentType.getTreatmentType());
 		}catch (Exception ex) {
 			logger.error("Exception:", ex);
 		}finally{
+			return treatmentTime;
 		}
 	}
 	

@@ -17,50 +17,61 @@
 		<script>
 	        var mainApp = angular.module("mainApp", []);
 	        mainApp.controller('treatmentView', function($scope, $http) {
-	        	var url = "getPatientListForTreatment";
-        		$http.get(url).success( function(response) {
-        			$scope.patientDetailsList = response; 
-        		});
+	        	$scope.treatmentListShow = false;	        	
+	        	var url = "getTreatmentType";
+	        	$http.get(url).success( function(response) {
+        			$scope.treatmentTypeList = response;        			
+        		});        		
+        		$scope.treatmentTypeSelectChange = function(){
+        			var url = "getPatientListForTreatment/"+$scope.treatment_type;
+        			$http.get(url).success( function(response) {
+            			$scope.patientDetailsList = response; 
+            			$scope.treatmentListShow = true;
+            		});        			
+        		}
         		$scope.startTreatment = function(patientId){
         			var url = "startTreatmentForPatientId/"+patientId;
         			$http.get(url).success( function(response) {
         				if(response.message!=undefined){
         					alertify.alert('Info', response.message);
-        					var url = "getPatientListForTreatment";
-        					$http.get(url).success( function(response) {
-        	        			$scope.patientDetailsList = response; 
-        	        		});
+        					var url = "getPatientListForTreatment/"+$scope.treatment_type;
+                			$http.get(url).success( function(response) {
+                    			$scope.patientDetailsList = response; 
+                    			$scope.treatmentListShow = true;
+                    		});
         				}else if(response.error!=undefined){
         					alertify.alert('Warn', response.error);
         				}
-            		});        			
+            		});
         		}
         		$scope.completeTreatment = function(patientId){
         			var url = "completeTreatmentForPatientId/"+patientId;
         			$http.get(url).success( function(response) {
         				if(response.message!=undefined){
         					alertify.alert('Info', response.message);
-        					var url = "getPatientListForTreatment";
-        					$http.get(url).success( function(response) {
-        	        			$scope.patientDetailsList = response; 
-        	        		});
+        					var url = "getPatientListForTreatment/"+$scope.treatment_type;
+                			$http.get(url).success( function(response) {
+                    			$scope.patientDetailsList = response; 
+                    			$scope.treatmentListShow = true;
+                    		});
         				}else if(response.error!=undefined){
         					alertify.alert('Warn', response.error);
         				}
-            		});        			
+            		}); 
+        			 
         		}
 	        });
       	</script>
 	</head>
 	<body>
-		<div class="container">
+		<div class="container1">
 		<nav class="navbar navbar-inverse">
 			<div class="container-fluid">
 				<ul class="nav navbar-nav">
 					<li><a href="/rtqwta/">Patient Admission</a></li>
-					<li class="active"><a href="treatment.jsp">Treatment</a></li>					
+					<li class="active"><a href="treatment.jsp">Treatment</a></li>				
 					<li><a href="treatmentCompleted.jsp">Complete Treatment</a></li>
-					<li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li>
+					<!-- <li><a href="historicalTreatmentCompleted.jsp">Historical Complete Treatment</a></li> -->
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
@@ -92,21 +103,37 @@
 				<div class="panel-body">
 					<div ng-app="mainApp" ng-controller="treatmentView" class="modal-body">
 						<div class="table-responsive">
-							<table  align="center"  class="table table-hover table-bordered">
+							<div class="form-group">
+								<table>
+									<tr>
+										<td>
+											<label>Treatment Type</label>
+										</td>
+										<td>
+											<select name="treatment_type" id="treatment_type" ng-model="treatment_type" ng-change="treatmentTypeSelectChange()" class="form-control" style="width:100%;" required="required">
+												<option ng-repeat="treatmentType in treatmentTypeList" value="{{treatmentType.Treatment_Type}}">{{treatmentType.Treatment_Type}}</option>
+											</select>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<table  align="center"  class="table table-hover table-bordered" ng-show="treatmentListShow">
 								<thead class="thead-inverse">									
 									<tr>
 										<td>Patient ID</td>										
-										<td>Patient Name</td>
-										<td>Patient Age</td>
+										<td>Name</td>
+										<td>Age</td>
+										<td>Gender</td>
 										<td>Location</td>
 										<td>Treatment Type</td>
-										<td>Token Number</td>
+										<td>Token No</td>
 										<td>Doctor</td>
-										<td>Admission Timestamp</td>
-										<td>Expected Start Time</td>
-										<td>Expected Complete Time</td>
+										<td>Admission Time</td>
+										<td>Average Waiting Time</td>
 										<td>Start Time</td>
 										<td>Complete Time</td>
+										<td>Average Default Treatment Time(mm:ss)</td>
+										<!-- <td>Actual Treatment Time(mm:ss)</td> -->
 										<td>Action</td>
 									</tr>
 								</thead>
@@ -115,23 +142,26 @@
 										<th scope="row">{{patientDetails.patient_id}}</th>
 										<td>{{patientDetails.patient_name}}</td>
 										<td>{{patientDetails.patient_age}}</td>
+										<td>{{patientDetails.patient_gender}}</td>
 										<td>{{patientDetails.location}}</td>
 										<td>{{patientDetails.treatment_type}}</td>
 										<td>{{patientDetails.token_number}}</td>
 										<td>{{patientDetails.doctor}}</td>
 										<td>{{patientDetails.admission_ts}}</td>
-										<td>{{patientDetails.expected_treatment_start_ts}}</td>
-										<td>{{patientDetails.expected_treatment_complete_ts}}</td>
+										<td>{{patientDetails.average_waiting_time}}</td>										
 										<td>{{patientDetails.treatment_start_ts}}</td>
 										<td>{{patientDetails.treatment_complete_ts}}</td>
+										<td>{{patientDetails.average_treatment_time}}</td>
+										<!-- <td>{{patientDetails.treatment_time}}</td> -->
 										<td>
-											<div ng-if="patientDetails.treatment_start_ts == undefine">
+											<div ng-if="patientDetails.status == 'W'">
 												<button type="submit" class="btn btn-success" ng-click="startTreatment(patientDetails.patient_id)">Start Treatment</button>
 											</div>
-											<div ng-if="patientDetails.treatment_start_ts != undefine">
-												<div ng-if="patientDetails.treatment_complete_ts == undefine">
-													<button type="submit" class="btn btn-danger" ng-click="completeTreatment(patientDetails.patient_id)">Complete Treatment</button>
-												</div>
+											<div ng-if="patientDetails.status == 'S'">
+												<button type="submit" class="btn btn-danger" ng-click="completeTreatment(patientDetails.patient_id)">Complete Treatment</button>
+											</div>
+											<div ng-if="patientDetails.status == 'C'">
+												Completed
 											</div>
 										</td>
 									</tr>

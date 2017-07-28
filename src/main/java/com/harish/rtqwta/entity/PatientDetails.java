@@ -18,8 +18,8 @@ public class PatientDetails {
 	private long waitingTime;
 	private long treatmentTime;
 	private String patient_type;
-	private Date expected_treatment_start_ts;
-	private Date expected_treatment_complete_ts;
+	private long average_treatment_time;
+	private long average_waiting_time;
 	public int getPatient_id() {
 		return patient_id;
 	}
@@ -57,8 +57,6 @@ public class PatientDetails {
 	public void setToken_number(String token_number) {
 		this.token_number = token_number;
 	}
-	
-	
 	public String getTreatment_type() {
 		return treatment_type;
 	}
@@ -114,18 +112,16 @@ public class PatientDetails {
 	public void setPatient_type(String patient_type) {
 		this.patient_type = patient_type;
 	}
-	public Date getExpected_treatment_start_ts() {
-		return expected_treatment_start_ts;
+	public long getAverage_treatment_time() {
+		return average_treatment_time;
 	}
-	public void setExpected_treatment_start_ts(Date expected_treatment_start_ts) {
-		this.expected_treatment_start_ts = expected_treatment_start_ts;
+	public void setAverage_treatment_time(long average_treatment_time) {
+		this.average_treatment_time = average_treatment_time;
 	}
-	public Date getExpected_treatment_complete_ts() {
-		return expected_treatment_complete_ts;
+	public long getAverage_waiting_time() {
+		return average_waiting_time;
 	}
-	public void setExpected_treatment_complete_ts(Date expected_treatment_complete_ts) {
-		this.expected_treatment_complete_ts = expected_treatment_complete_ts;
+	public void setAverage_waiting_time(long average_waiting_time) {
+		this.average_waiting_time = average_waiting_time;
 	}
-	
-
 }
